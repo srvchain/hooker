@@ -3,7 +3,7 @@ package hooker
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 )
@@ -29,21 +29,23 @@ func Hook(id int) {
 	}
 }
 
-func Handle(client IChecker) (w http.ResponseWriter, r *http.Request) {
-	issue := &Issue{}
-	err := json.NewDecoder(r.Body).Decode(issue)
-	if err != nil {
-		logrus.WithField("issue", issue).Error(err)
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-	}
-	w.WriteHeader(200)
-	w.Write([]byte("ok"))
+func Handle(client IChecker) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		issue := &Issue{}
+		err := json.NewDecoder(r.Body).Decode(issue)
+		if err != nil {
+			logrus.WithField("issue", issue).Error(err)
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+		}
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
 
-	if client.IsAllow(issue.CompanyID) {
-		go Hook(issue.ID)
+		if client.IsAllow(issue.CompanyID) {
+			go Hook(issue.ID)
+		}
+		return
 	}
-	return
 }
 
 type Issue struct {

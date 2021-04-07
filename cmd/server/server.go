@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/srvchain/hooker"
 	"github.com/alexsuslov/godotenv"
+	"github.com/srvchain/hooker"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -14,31 +14,32 @@ var httpAddr = "0.0.0.0:80"
 
 type Clients map[int]string
 
-func (Clients Clients)IsAllow(id int)bool{
+func (Clients Clients) IsAllow(id int) bool {
 	_, ok := Clients[id]
 	return ok
 }
 
-func main(){
+func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("warrning load env", err)
 	}
 
 	data, err := ioutil.ReadFile("clients.yml")
-	if err!= nil{
+	if err != nil {
 		panic(err)
 	}
-	clients:=&Clients{}
+	clients := &Clients{}
 	err = yaml.Unmarshal(data, clients)
-	if err!= nil{
+	if err != nil {
 		panic(err)
 	}
 
 	//get client
 	http.HandleFunc("/", handle)
-	http.HandleFunc("/hook", hooker.Handle(clients))
+	hook:=hooker.Handle(clients)
+	http.HandleFunc("/hook", hook)
 
-	if os.Getenv("LISTEN")!= ""{
+	if os.Getenv("LISTEN") != "" {
 		httpAddr = os.Getenv("LISTEN")
 	}
 	log.Println("listen", httpAddr)
@@ -48,9 +49,9 @@ func main(){
 	}
 }
 
-func handle(w http.ResponseWriter, r *http.Request){
-	data, err:=ioutil.ReadAll(r.Body)
-	if err != nil{
+func handle(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
 	}
